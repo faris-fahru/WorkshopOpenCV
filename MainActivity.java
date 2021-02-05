@@ -7,13 +7,20 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.Surface;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 public class MainActivity extends AppCompatActivity implements CvCameraViewListener2 {
     private static final String TAG = "OCV 3.4.13";
@@ -26,6 +33,9 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     Mat mRgba;
     Mat mRgbaF;
     Mat mRgbaT;
+
+    boolean startCanny = false;
+    boolean startBlur = false;
 
     private BaseLoaderCallback mLoaderCallBack = new BaseLoaderCallback(this) {
         @Override
@@ -49,6 +59,31 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Button btnCanny = findViewById(R.id.btn_canny);
+        Button btnBlur = findViewById(R.id.btn_blur);
+
+        btnCanny.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(startCanny == false){
+                    startCanny = true;
+                }else{
+                    startCanny = false;
+                }
+            }
+        });
+
+        btnCanny.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(startCanny == false){
+                    startCanny = true;
+                }else{
+                    startCanny = false;
+                }
+            }
+        });
 
         mOpenCVCameraView =(CameraBridgeViewBase) findViewById(R.id.java_surface_view);
 
@@ -88,6 +123,9 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
 
     @Override
     public void onCameraViewStarted(int width, int height) {
+        mRgba = new Mat(height, width, CvType.CV_8UC4);
+        mRgbaF = new Mat(height, width, CvType.CV_8UC4);
+        mRgbaT = new Mat(width, width, CvType.CV_8UC4);
 
     }
 
@@ -99,6 +137,21 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
+        Core.transpose(mRgba, mRgbaT);
+        Imgproc.resize(mRgbaT, mRgbaF, mRgbaF.size(), 0,0, 0);
+        Core.flip(mRgbaF, mRgba, 1 );
+
+        if(startCanny==true){
+            Imgproc.cvtColor(mRgba,mRgba,Imgproc.COLOR_RGBA2GRAY);
+            Imgproc.Canny(mRgba,mRgba,100,80);
+        }
+
+        if(startBlur==true){
+            Size size = new Size(45,45);
+            Point point = new Point(20,30);
+            Imgproc.blur(mRgba,mRgba,size,point,Core.BORDER_DEFAULT);
+        }
+
         return mRgba;
     }
 }
